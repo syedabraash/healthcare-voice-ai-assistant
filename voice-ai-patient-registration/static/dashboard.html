@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Patient Registration Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --ink: #16241f;
+    --paper: #f6f4ee;
+    --line: #d8d3c4;
+    --accent: #2f6f4f;
+    --accent-soft: #e6efe8;
+    --muted: #6b6558;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 40px 24px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  p.sub { color: var(--muted); margin-top: 0; margin-bottom: 28px; font-size: 15px; }
+  .controls {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  input {
+    font-family: inherit; padding: 9px 12px; border: 1px solid var(--line);
+    border-radius: 6px; background: white; font-size: 14px; min-width: 160px;
+  }
+  button {
+    font-family: inherit; padding: 9px 16px; border: 1px solid var(--accent);
+    background: var(--accent); color: white; border-radius: 6px; cursor: pointer;
+    font-size: 14px;
+  }
+  button.ghost { background: transparent; color: var(--accent); }
+  table {
+    width: 100%; border-collapse: collapse; background: white;
+    border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  }
+  th, td {
+    text-align: left; padding: 10px 12px; font-size: 13.5px;
+    border-bottom: 1px solid var(--line);
+  }
+  th {
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.03em; font-size: 11.5px;
+  }
+  tr:last-child td { border-bottom: none; }
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  .count { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Patient Registration Dashboard</h1>
+  <p class="sub">Records collected by the voice agent, read live from <code>GET /patients</code>.</p>
+
+  <div class="controls">
+    <input id="f-last-name" placeholder="Filter: last name" />
+    <input id="f-dob" placeholder="Filter: DOB (YYYY-MM-DD)" />
+    <input id="f-phone" placeholder="Filter: phone (10 digits)" />
+    <button onclick="load()">Search</button>
+    <button class="ghost" onclick="clearFilters()">Clear</button>
+  </div>
+
+  <div class="count" id="count"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th><th>DOB</th><th>Sex</th><th>Phone</th><th>City / State</th>
+        <th>Insurance</th><th>Language</th><th>Registered</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div id="empty" class="empty" style="display:none;">No patients found.</div>
+</div>
+
+<script>
+async function load() {
+  const params = new URLSearchParams();
+  const ln = document.getElementById('f-last-name').value.trim();
+  const dob = document.getElementById('f-dob').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  if (ln) params.set('last_name', ln);
+  if (dob) params.set('date_of_birth', dob);
+  if (phone) params.set('phone_number', phone.replace(/\D/g, ''));
+
+  const res = await fetch('/patients?' + params.toString());
+  const json = await res.json();
+  const rows = document.getElementById('rows');
+  const empty = document.getElementById('empty');
+  const count = document.getElementById('count');
+  rows.innerHTML = '';
+
+  if (json.error) {
+    count.textContent = 'Error loading patients.';
+    return;
+  }
+  const patients = json.data || [];
+  count.textContent = patients.length + ' patient' + (patients.length === 1 ? '' : 's');
+  empty.style.display = patients.length ? 'none' : 'block';
+
+  for (const p of patients) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.first_name} ${p.last_name}</td>
+      <td>${p.date_of_birth}</td>
+      <td>${p.sex}</td>
+      <td>(${p.phone_number.slice(0,3)}) ${p.phone_number.slice(3,6)}-${p.phone_number.slice(6)}</td>
+      <td>${p.city}, ${p.state}</td>
+      <td>${p.insurance_provider || '—'}</td>
+      <td>${p.preferred_language || '—'}</td>
+      <td>${new Date(p.created_at).toLocaleDateString()}</td>
+    `;
+    rows.appendChild(tr);
+  }
+}
+function clearFilters() {
+  document.getElementById('f-last-name').value = '';
+  document.getElementById('f-dob').value = '';
+  document.getElementById('f-phone').value = '';
+  load();
+}
+load();
+</script>
+</body>
+</html>

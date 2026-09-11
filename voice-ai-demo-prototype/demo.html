@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Riverside Health — Voice Intake Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDE8DD;
+    --paper-raised:#F6F3EA;
+    --ink:#1E2A24;
+    --ink-soft:#5B6660;
+    --line:#C9C0AC;
+    --teal:#3E6259;
+    --teal-tint:#E3ECE7;
+    --amber:#B8763C;
+    --amber-tint:#F3E4D4;
+    --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", -apple-system, sans-serif;
+    line-height:1.5;
+    padding:32px 20px 60px;
+  }
+  .page{max-width:1080px;margin:0 auto;}
+
+  header.masthead{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:18px;
+    margin-bottom:28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header.masthead h1{
+    font-family:"Source Serif 4", Georgia, serif;
+    font-weight:700;
+    font-size:30px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  header.masthead p{
+    margin:6px 0 0;
+    color:var(--ink-soft);
+    font-size:14.5px;
+    max-width:46ch;
+  }
+  .badge{
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:6px 10px;
+    background:var(--paper-raised);
+    white-space:nowrap;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap:0;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+  }
+  @media (max-width: 820px){
+    .grid{grid-template-columns:1fr;}
+  }
+
+  .panel{padding:22px 24px;}
+  .panel + .panel{border-left:1px solid var(--line);}
+  @media (max-width: 820px){
+    .panel + .panel{border-left:none; border-top:1px solid var(--line);}
+  }
+
+  .panel h2{
+    font-family:"Source Serif 4", serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .panel .panel-sub{
+    color:var(--ink-soft);
+    font-size:13px;
+    margin:0 0 16px;
+  }
+
+  /* --- call panel --- */
+  .call-status{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:16px;
+    font-size:14px;
+  }
+  .status-dot{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--line);
+    flex:none;
+  }
+  .status-dot.live{ background:#C1432F; animation:pulse 1.4s ease-in-out infinite; }
+  .status-dot.done{ background:var(--teal); }
+  @keyframes pulse{
+    0%,100%{opacity:1;} 50%{opacity:0.35;}
+  }
+  .status-label{font-weight:600;}
+  .status-timer{
+    margin-left:auto;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink-soft);
+  }
+
+  .waveform{
+    display:flex; align-items:flex-end; gap:3px;
+    height:28px; margin-bottom:18px;
+  }
+  .waveform span{
+    width:3px; background:var(--line); border-radius:1px;
+    height:20%;
+    transition:height 0.25s ease, background 0.25s ease;
+  }
+  .waveform.live span{ background:var(--teal); }
+
+  .transcript{
+    height:380px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding-right:4px;
+  }
+  .bubble{
+    max-width:82%;
+    padding:9px 13px;
+    border-radius:12px;
+    font-size:14.5px;
+    line-height:1.45;
+    opacity:0;
+    transform:translateY(6px);
+    animation:in 0.28s ease forwards;
+  }
+  @keyframes in{ to{opacity:1; transform:translateY(0);} }
+  .bubble.agent{
+    align-self:flex-start;
+    background:var(--teal-tint);
+    border:1px solid #cfe0d8;
+    border-bottom-left-radius:3px;
+  }
+  .bubble.caller{
+    align-self:flex-end;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-bottom-right-radius:3px;
+  }
+  .bubble .who{
+    display:block;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-bottom:2px;
+    font-weight:600;
+  }
+  .bubble.system{
+    align-self:center;
+    background:none;
+    border:1px dashed var(--line);
+    color:var(--ink-soft);
+    font-size:12.5px;
+    padding:5px 12px;
+  }
+
+  .controls{
+    display:flex; gap:10px; margin-top:18px;
+  }
+  button{
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:14px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:6px;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper-raised);
+    cursor:pointer;
+  }
+  button.secondary{
+    background:transparent;
+    color:var(--ink);
+  }
+  button:disabled{
+    opacity:0.4;
+    cursor:default;
+  }
+
+  /* --- intake card --- */
+  .field-row{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    padding:9px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .field-row:last-child{border-bottom:none;}
+  .field-label{color:var(--ink-soft); flex:none; width:130px;}
+  .field-value{
+    text-align:right;
+    font-weight:500;
+    flex:1;
+    transition:background 0.6s ease;
+    border-radius:4px;
+    padding:2px 4px;
+  }
+  .field-value.empty{color:#B7AF9C; font-weight:400;}
+  .field-value.flash{ background:var(--amber-tint); }
+
+  .lookup-note{
+    margin-top:14px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+    padding-top:12px;
+    opacity:0;
+    transition:opacity 0.4s ease;
+  }
+  .lookup-note.show{opacity:1;}
+
+  /* --- roster --- */
+  .roster-wrap{margin-top:28px;}
+  .roster-wrap h2{
+    font-family:"Source Serif 4", serif;
+    font-size:19px;
+    margin:0 0 4px;
+  }
+  .roster-wrap .panel-sub{color:var(--ink-soft); font-size:13px; margin:0 0 14px;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    font-size:13.5px;
+  }
+  th,td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  th{
+    color:var(--ink-soft);
+    font-weight:600;
+    font-size:12.5px;
+  }
+  tr:last-child td{border-bottom:none;}
+  tr.new-row{
+    animation:rowIn 0.6s ease;
+    background:var(--teal-tint);
+  }
+  @keyframes rowIn{
+    from{ background:var(--amber-tint); }
+    to{ background:var(--teal-tint); }
+  }
+
+  footer.note{
+    margin-top:30px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+    padding-top:14px;
+  }
+  footer.note a{color:var(--teal);}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <h1>Riverside Health — Voice Intake Prototype</h1>
+      <p>A scripted, offline walkthrough of the voice agent's conversation and the resulting patient record. No live phone number or database is connected — see the note at the bottom.</p>
+    </div>
+    <span class="badge">Static demo · mock data</span>
+  </header>
+
+  <div class="grid">
+
+    <!-- CALL PANEL -->
+    <div class="panel">
+      <h2>Live call</h2>
+      <p class="panel-sub">Simulated inbound call to the intake line</p>
+
+      <div class="call-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-label" id="statusLabel">Ready to call</span>
+        <span class="status-timer" id="statusTimer"></span>
+      </div>
+
+      <div class="waveform" id="waveform"></div>
+
+      <div class="transcript" id="transcript"></div>
+
+      <div class="controls">
+        <button id="startBtn">Start demo call</button>
+        <button id="replayBtn" class="secondary" disabled>Replay</button>
+      </div>
+    </div>
+
+    <!-- INTAKE CARD -->
+    <div class="panel">
+      <h2>Patient intake card</h2>
+      <p class="panel-sub">Fills in as the agent confirms each field</p>
+
+      <div id="fields"></div>
+
+      <div class="lookup-note" id="lookupNote">Checked existing records by phone number — no match found, proceeding as a new patient.</div>
+    </div>
+
+  </div>
+
+  <div class="roster-wrap">
+    <h2>Patient roster</h2>
+    <p class="panel-sub">Same data the <code>GET /patients</code> endpoint and dashboard would show — this call's record is added once it ends.</p>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>DOB</th><th>Phone</th><th>City / State</th><th>Insurance</th><th>Registered</th></tr>
+      </thead>
+      <tbody id="rosterBody"></tbody>
+    </table>
+  </div>
+
+  <footer class="note">
+    This page is a self-contained mock-up: the transcript is pre-scripted and the roster is hard-coded, so it runs the same every time with no server or phone call involved. It's here to show the intended conversational flow and data model at a glance. The real system — Vapi handling the actual phone call, Claude driving the conversation, and a FastAPI + SQLite backend persisting records — is in the accompanying project files. See <a href="README.md">README.md</a> in this folder for how the two relate.
+  </footer>
+
+</div>
+
+<script>
+const FIELD_DEFS = [
+  ["name", "Name"],
+  ["dob", "Date of birth"],
+  ["sex", "Sex"],
+  ["phone", "Phone"],
+  ["address", "Address"],
+  ["insurance", "Insurance"],
+];
+
+const SEED_ROSTER = [
+  { name: "Jane Doe", dob: "04/12/1990", phone: "(555) 123-4567", city: "Austin, TX", insurance: "Blue Cross", registered: "Sep 2" },
+  { name: "Carlos Mendez", dob: "11/02/1985", phone: "(555) 987-6543", city: "Phoenix, AZ", insurance: "—", registered: "Sep 5" },
+];
+
+// Each script step: speaker ('agent'|'caller'|'system'), text, optional field updates, optional flash-only update
+const SCRIPT = [
+  { speaker: "agent", text: "Hi there, thanks for calling Riverside Health! I'm Ava, and I'll help get you registered today. Could I start with your first and last name?" },
+  { speaker: "caller", text: "Sure, it's Emily Carter." , set:{name:"Emily Carter"} },
+  { speaker: "agent", text: "Great to meet you, Emily. What's your date of birth?" },
+  { speaker: "caller", text: "March 3rd, 1994.", set:{dob:"03/03/1994"} },
+  { speaker: "agent", text: "Got it. And would you like to share your sex for our records — Male, Female, Other, or you're welcome to decline?" },
+  { speaker: "caller", text: "Female.", set:{sex:"Female"} },
+  { speaker: "agent", text: "Thanks. What's the best phone number to reach you?" },
+  { speaker: "caller", text: "555-201-0199.", set:{phone:"(555) 201-0199"} },
+  { speaker: "system", text: "tool call → lookupPatientByPhone", lookup:true },
+  { speaker: "agent", text: "Thanks — and what's your mailing address?" },
+  { speaker: "caller", text: "123 Willow Lane, and I'm in Denver, Colorado — the zip is 80203.", set:{address:"123 Willow Lane, Denver, CO 80203"} },
+  { speaker: "agent", text: "Perfect, I have that. Before we finish up — I can also grab insurance info, an emergency contact, or your preferred language if you'd like. Want to add any of that?" },
+  { speaker: "caller", text: "Sure — my insurance is Aetna, member ID 44921 — wait, sorry, it's 449213.", set:{insurance:"Aetna · 449213"}, flash:"insurance" },
+  { speaker: "agent", text: "No problem, updated — Aetna, member ID 449213." },
+  { speaker: "agent", text: "Let me make sure I've got everything right: Emily Carter, born March 3rd 1994, Female, phone 555-201-0199, at 123 Willow Lane, Denver, Colorado 80203, insured with Aetna, member ID 449213. Did I get all of that correctly?" },
+  { speaker: "caller", text: "Yes, that's all correct!" },
+  { speaker: "system", text: "tool call → createPatient · 201 Created", lookup:false },
+  { speaker: "agent", text: "You're all set, Emily — we'll see you soon!" },
+  { speaker: "end" },
+];
+
+const transcriptEl = document.getElementById("transcript");
+const fieldsEl = document.getElementById("fields");
+const statusDot = document.getElementById("statusDot");
+const statusLabel = document.getElementById("statusLabel");
+const statusTimer = document.getElementById("statusTimer");
+const waveform = document.getElementById("waveform");
+const startBtn = document.getElementById("startBtn");
+const replayBtn = document.getElementById("replayBtn");
+const lookupNote = document.getElementById("lookupNote");
+const rosterBody = document.getElementById("rosterBody");
+
+let fieldState = {};
+let timerInterval = null;
+let elapsed = 0;
+let playToken = 0;
+
+function renderFields(){
+  fieldsEl.innerHTML = "";
+  FIELD_DEFS.forEach(([key,label])=>{
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const val = fieldState[key];
+    row.innerHTML = `<span class="field-label">${label}</span><span class="field-value ${val ? "" : "empty"}" id="val-${key}">${val || "—"}</span>`;
+    fieldsEl.appendChild(row);
+  });
+}
+
+function flashField(key){
+  const el = document.getElementById(`val-${key}`);
+  if(!el) return;
+  el.classList.add("flash");
+  setTimeout(()=>el.classList.remove("flash"), 900);
+}
+
+function renderRoster(newPatient){
+  rosterBody.innerHTML = "";
+  const rows = newPatient ? [...SEED_ROSTER, newPatient] : SEED_ROSTER;
+  rows.forEach((p, i)=>{
+    const tr = document.createElement("tr");
+    if(newPatient && i === rows.length -1) tr.className = "new-row";
+    tr.innerHTML = `<td>${p.name}</td><td>${p.dob}</td><td>${p.phone}</td><td>${p.city}</td><td>${p.insurance}</td><td>${p.registered}</td>`;
+    rosterBody.appendChild(tr);
+  });
+}
+
+function buildWaveform(){
+  waveform.innerHTML = "";
+  for(let i=0;i<40;i++){
+    const bar = document.createElement("span");
+    waveform.appendChild(bar);
+  }
+}
+
+function animateWaveform(on){
+  waveform.classList.toggle("live", on);
+  if(!on){
+    [...waveform.children].forEach(b=>b.style.height = "20%");
+    return;
+  }
+  waveform._interval = setInterval(()=>{
+    [...waveform.children].forEach(b=>{
+      b.style.height = (15 + Math.random()*70) + "%";
+    });
+  }, 220);
+}
+
+function startTimer(){
+  elapsed = 0;
+  statusTimer.textContent = "0:00";
+  timerInterval = setInterval(()=>{
+    elapsed++;
+    const m = Math.floor(elapsed/60), s = elapsed%60;
+    statusTimer.textContent = `${m}:${s.toString().padStart(2,"0")}`;
+  }, 1000);
+}
+function stopTimer(){ clearInterval(timerInterval); }
+
+function addBubble(speaker, text){
+  const div = document.createElement("div");
+  div.className = "bubble " + speaker;
+  if(speaker === "agent"){
+    div.innerHTML = `<span class="who">Ava · Riverside Health</span>${text}`;
+  } else if(speaker === "caller"){
+    div.innerHTML = `<span class="who">Caller</span>${text}`;
+  } else {
+    div.textContent = text;
+  }
+  transcriptEl.appendChild(div);
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+}
+
+function resetDemo(){
+  fieldState = {};
+  renderFields();
+  renderRoster(null);
+  transcriptEl.innerHTML = "";
+  lookupNote.classList.remove("show");
+  statusDot.className = "status-dot";
+  statusLabel.textContent = "Ready to call";
+  statusTimer.textContent = "";
+  animateWaveform(false);
+  stopTimer();
+}
+
+async function playScript(){
+  const myToken = ++playToken;
+  resetDemo();
+  startBtn.disabled = true;
+  replayBtn.disabled = true;
+
+  statusDot.className = "status-dot live";
+  statusLabel.textContent = "Call in progress";
+  animateWaveform(true);
+  startTimer();
+  addBubble("system", "Incoming call connected — (555) 010-0199");
+  await wait(500);
+
+  for(const step of SCRIPT){
+    if(myToken !== playToken) return; // superseded by a new play
+    if(step.speaker === "end") break;
+    await wait(step.speaker === "agent" ? 950 : 750);
+    if(myToken !== playToken) return;
+    addBubble(step.speaker, step.text);
+    if(step.set){
+      Object.entries(step.set).forEach(([k,v])=>{ fieldState[k] = v; });
+      renderFields();
+      Object.keys(step.set).forEach(k=>flashField(k));
+    }
+    if(step.lookup === true){
+      lookupNote.classList.add("show");
+    }
+  }
+
+  await wait(600);
+  if(myToken !== playToken) return;
+  stopTimer();
+  animateWaveform(false);
+  statusDot.className = "status-dot done";
+  statusLabel.textContent = "Call ended";
+  addBubble("system", `Call ended — duration ${statusTimer.textContent}`);
+
+  renderRoster({
+    name: fieldState.name,
+    dob: fieldState.dob,
+    phone: fieldState.phone,
+    city: (fieldState.address || "").split(", ").slice(1).join(", ") || "—",
+    insurance: fieldState.insurance || "—",
+    registered: "Just now",
+  });
+
+  startBtn.disabled = false;
+  replayBtn.disabled = false;
+}
+
+function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+buildWaveform();
+resetDemo();
+
+startBtn.addEventListener("click", playScript);
+replayBtn.addEventListener("click", playScript);
+</script>
+</body>
+</html>
