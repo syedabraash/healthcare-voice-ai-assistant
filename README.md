@@ -90,7 +90,7 @@ Three tools connect the LLM to the backend (defined in
 ## Local setup
 
 ```bash
-git clone <this-repo>
+git clone <(https://github.com/syedabraash/healthcare-voice-ai-assistant)>
 cd voice-ai-patient-registration
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
